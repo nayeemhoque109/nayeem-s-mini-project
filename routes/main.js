@@ -30,7 +30,30 @@ module.exports = function(app, shopData) {
     });                                                                                                 
     app.post('/registered', function (req,res) {
         // saving data in database
-        res.send(' Hello '+ req.body.first + ' '+ req.body.last +' you are now registered!  We will send an email to you at ' + req.body.email);                                                                              
+        //res.send(' Hello '+ req.body.first + ' '+ req.body.last +' you are now registered!  We will send an email to you at ' + req.body.email); 
+
+        // Import bcrypt module
+        const bcrypt = require('bcrypt');
+        const saltRounds = 10;
+        const plainPassword = req.body.password;
+
+        // Hash the password before storing it in the database
+        bcrypt.hash(plainPassword, saltRounds, function(err, hashedPassword) {
+            // Store hashed password in your database.
+            let sqlquery = "INSERT INTO users (username, first_name, last_name, email, hashed_password) VALUES (?,?,?,?,?)";
+            // execute sql query
+            let newrecord = [req.body.username, req.body.first, req.body.last, req.body.email, hashedPassword];
+            db.query(sqlquery, newrecord, (err, result) => {
+              if (err) {
+                return console.error(err.message);
+              }
+              else
+              // Output the password and hashedPassword in the response
+              result = 'Hello '+ req.body.first + ' '+ req.body.last +' you are now registered! We will send an email to you at ' + req.body.email;
+              result += 'Your password is: '+ req.body.password +' and your hashed password is: '+ hashedPassword;
+              res.send(result);
+              });
+        });
     }); 
     app.get('/list', function(req, res) {
         let sqlquery = "SELECT * FROM books"; // query database to get all the books
@@ -75,4 +98,57 @@ module.exports = function(app, shopData) {
         });
     });       
 
+    // Add a /listusers route and page to display the user details
+    app.get('/listusers', function(req, res) {
+        let sqlquery = "SELECT username, first_name, last_name, email FROM users"; // query database to get all the users
+        // execute sql query
+        db.query(sqlquery, (err, result) => {
+            if (err) {
+                res.redirect('./'); 
+            }
+            let newData = Object.assign({}, shopData, {availableUsers:result});
+            console.log(newData)
+            res.render("listusers.ejs", newData)
+         });
+    });
+
+    // Create a new login form and route
+    app.get('/login', function(req, res) {
+        res.render('login.ejs', shopData);
+    });
+
+    // Create a new route to handle login logic
+    app.post('/loggedin', function(req, res) {
+        // Compare the form data with the data stored in the database
+        let sqlquery = "SELECT hashed_password FROM users WHERE username = ?"; // query database to get the hashed password for the user
+        // execute sql query
+        let username = req.body.username;
+        db.query(sqlquery, username, (err, result) => {
+            if (err) {
+                return console.error(err.message);
+            }
+            else if (result.length == 0) {
+                // No user found with that username
+                res.send('Invalid username or password');
+            }
+            else {
+                // User found, compare the passwords
+                let hashedPassword = result[0].hashed_password;
+                bcrypt.compare(req.body.password, hashedPassword, function(err, result) {
+                    if (err) {
+                        // Handle error
+                        return console.error(err.message);
+                    }
+                    else if (result == true) {
+                        // Passwords match, login successful
+                        res.send('Welcome, ' + username + '!');
+                    }
+                    else {
+                        // Passwords do not match, login failed
+                        res.send('Invalid username or password');
+                    }
+                });
+            }
+        });
+    });
 }
