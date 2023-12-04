@@ -4,6 +4,16 @@ var ejs = require('ejs')
 var bodyParser= require ('body-parser')
 const mysql = require('mysql');
 
+// Create a session
+app.use(session({
+    secret: 'somerandomstuff',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+    expires: 600000
+    }
+    }));
+
 // Create the express application object
 const app = express()
 const port = 8000

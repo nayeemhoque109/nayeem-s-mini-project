@@ -1,5 +1,11 @@
 module.exports = function(app, shopData) {
 
+    const redirectLogin = (req, res, next) => {
+        if (!req.session.userId ) {
+        res.redirect('./login')
+        } else { next (); }
+        }
+
     // Handle our routes
     app.get('/',function(req,res){
         res.render('index.ejs', shopData)
@@ -30,7 +36,7 @@ module.exports = function(app, shopData) {
     });                                                                                                 
     app.post('/registered', function (req,res) {
         // saving data in database
-        //res.send(' Hello '+ req.body.first + ' '+ req.body.last +' you are now registered!  We will send an email to you at ' + req.body.email); 
+        res.send(' Hello '+ req.body.first + ' '+ req.body.last +' you are now registered!  We will send an email to you at ' + req.body.email); 
 
         // Import bcrypt module
         const bcrypt = require('bcrypt');
@@ -117,38 +123,54 @@ module.exports = function(app, shopData) {
         res.render('login.ejs', shopData);
     });
 
-    // Create a new route to handle login logic
-    app.post('/loggedin', function(req, res) {
-        // Compare the form data with the data stored in the database
-        let sqlquery = "SELECT hashed_password FROM users WHERE username = ?"; // query database to get the hashed password for the user
-        // execute sql query
-        let username = req.body.username;
-        db.query(sqlquery, username, (err, result) => {
-            if (err) {
-                return console.error(err.message);
-            }
-            else if (result.length == 0) {
-                // No user found with that username
-                res.send('Invalid username or password');
-            }
-            else {
-                // User found, compare the passwords
-                let hashedPassword = result[0].hashed_password;
-                bcrypt.compare(req.body.password, hashedPassword, function(err, result) {
-                    if (err) {
-                        // Handle error
-                        return console.error(err.message);
-                    }
-                    else if (result == true) {
-                        // Passwords match, login successful
-                        res.send('Welcome, ' + username + '!');
-                    }
-                    else {
-                        // Passwords do not match, login failed
-                        res.send('Invalid username or password');
-                    }
-                });
-            }
+    // Edit your login route to save the user session when login is successful
+app.post('/loggedin', function(req, res) {
+    // Compare the form data with the data stored in the database
+    let sqlquery = "SELECT hashed_password FROM users WHERE username = ?"; // query database to get the hashed password for the user
+    // execute sql query
+    let username = req.body.username;
+    db.query(sqlquery, username, (err, result) => {
+      if (err) {
+        return console.error(err.message);
+      }
+      else if (result.length == 0) {
+        // No user found with that username
+        res.send('Invalid username or password');
+      }
+      else {
+        // User found, compare the passwords
+        let hashedPassword = result[0].hashed_password;
+        bcrypt.compare(req.body.password, hashedPassword, function(err, result) {
+          if (err) {
+            // Handle error
+            return console.error(err.message);
+          }
+          else if (result == true) {
+            // Passwords match, login successful
+            // Save user session here, when login is successful
+            req.session.userId = req.body.username;
+            res.send('Welcome, ' + username + '!');
+          }
+          else {
+            // Passwords do not match, login failed
+            res.send('Invalid username or password');
+          }
         });
+      }
     });
+  });
+  
+  // Add a logout route to your main.js file
+  app.get('/logout', redirectLogin, (req,res) => {
+    req.session.destroy(err => {
+      if (err) {
+        return res.redirect('./')
+      }
+      res.send('you are now logged out. <a href='+'./'+'>Home</a>');
+    })
+  })
+  
+    
+
 }
+
