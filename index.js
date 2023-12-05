@@ -2,7 +2,14 @@
 var express = require ('express')
 var ejs = require('ejs')
 var bodyParser= require ('body-parser')
+var session = require ('express-session');
 const mysql = require('mysql');
+
+
+// Create the express application object
+const app = express()
+const port = 8000
+app.use(bodyParser.urlencoded({ extended: true }))
 
 // Create a session
 app.use(session({
@@ -14,10 +21,6 @@ app.use(session({
     }
     }));
 
-// Create the express application object
-const app = express()
-const port = 8000
-app.use(bodyParser.urlencoded({ extended: true }))
 
 // Set up css
 app.use(express.static(__dirname + '/public'));
@@ -37,7 +40,6 @@ db.connect((err) => {
     console.log('Connected to database');
 });
 global.db = db;
-
 
 // Set the directory where Express will pick up HTML files
 // __dirname will get the current directory

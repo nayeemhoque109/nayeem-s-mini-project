@@ -35,9 +35,6 @@ module.exports = function(app, shopData) {
         res.render('register.ejs', shopData);                                                                     
     });                                                                                                 
     app.post('/registered', function (req,res) {
-        // saving data in database
-        res.send(' Hello '+ req.body.first + ' '+ req.body.last +' you are now registered!  We will send an email to you at ' + req.body.email); 
-
         // Import bcrypt module
         const bcrypt = require('bcrypt');
         const saltRounds = 10;
@@ -55,8 +52,7 @@ module.exports = function(app, shopData) {
               }
               else
               // Output the password and hashedPassword in the response
-              result = 'Hello '+ req.body.first + ' '+ req.body.last +' you are now registered! We will send an email to you at ' + req.body.email;
-              result += 'Your password is: '+ req.body.password +' and your hashed password is: '+ hashedPassword;
+              result = 'Hello '+ req.body.first + ' '+ req.body.last +' you are now registered! We will send an email to you at ' + req.body.email + 'Your password is: '+ req.body.password +' and your hashed password is: '+ hashedPassword;
               res.send(result);
               });
         });
@@ -140,6 +136,7 @@ app.post('/loggedin', function(req, res) {
       else {
         // User found, compare the passwords
         let hashedPassword = result[0].hashed_password;
+        const bcrypt = require('bcrypt');
         bcrypt.compare(req.body.password, hashedPassword, function(err, result) {
           if (err) {
             // Handle error
@@ -149,7 +146,7 @@ app.post('/loggedin', function(req, res) {
             // Passwords match, login successful
             // Save user session here, when login is successful
             req.session.userId = req.body.username;
-            res.send('Welcome, ' + username + '!');
+            res.send('Welcome, ' + req.body.username + '!');
           }
           else {
             // Passwords do not match, login failed
