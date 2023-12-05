@@ -4,7 +4,7 @@ module.exports = function(app, shopData) {
         if (!req.session.userId ) {
         res.redirect('./login')
         } else { next (); }
-        }
+      }
 
     // Handle our routes
     app.get('/',function(req,res){
@@ -14,7 +14,12 @@ module.exports = function(app, shopData) {
         res.render('about.ejs', shopData);
     });
     app.get('/search',function(req,res){
-        res.render("search.ejs", shopData);
+      if (!req.session.userId ) {
+        res.send('you need to login. <a href='+'./login'+'>login</a>');
+        } 
+        else{
+          res.render("search.ejs", shopData);
+        }
     });
     app.get('/search-result', function (req, res) {
         //searching in the database
@@ -58,20 +63,30 @@ module.exports = function(app, shopData) {
         });
     }); 
     app.get('/list', function(req, res) {
+      if (!req.session.userId ) {
+        res.send('you need to login. <a href='+'./login'+'>login</a>');
+        } 
+        else{
         let sqlquery = "SELECT * FROM books"; // query database to get all the books
-        // execute sql query
-        db.query(sqlquery, (err, result) => {
-            if (err) {
-                res.redirect('./'); 
-            }
-            let newData = Object.assign({}, shopData, {availableBooks:result});
-            console.log(newData)
-            res.render("list.ejs", newData)
-         });
+          // execute sql query
+          db.query(sqlquery, (err, result) => {
+              if (err) {
+                  res.redirect('./'); 
+              }
+              let newData = Object.assign({}, shopData, {availableBooks:result});
+              console.log(newData)
+              res.render("list.ejs", newData)
+          });
+        }
     });
 
     app.get('/addbook', function (req, res) {
-        res.render('addbook.ejs', shopData);
+      if (!req.session.userId ) {
+        res.send('you need to login. <a href='+'./login'+'>login</a>');
+        } 
+        else{
+          res.render('addbook.ejs', shopData);
+        }
      });
  
      app.post('/bookadded', function (req,res) {
@@ -89,7 +104,11 @@ module.exports = function(app, shopData) {
        });    
 
        app.get('/bargainbooks', function(req, res) {
-        let sqlquery = "SELECT * FROM books WHERE price < 20";
+        if (!req.session.userId ) {
+          res.send('you need to login. <a href='+'./login'+'>login</a>');
+          } 
+          else{
+            let sqlquery = "SELECT * FROM books WHERE price < 20";
         db.query(sqlquery, (err, result) => {
           if (err) {
              res.redirect('./');
@@ -98,6 +117,9 @@ module.exports = function(app, shopData) {
           console.log(newData)
           res.render("bargains.ejs", newData)
         });
+
+          }
+        
     });       
 
     // Add a /listusers route and page to display the user details
@@ -116,7 +138,12 @@ module.exports = function(app, shopData) {
 
     // Create a new login form and route
     app.get('/login', function(req, res) {
-        res.render('login.ejs', shopData);
+      if (req.session.userId ) {
+        res.send('you are already logged in. <a href='+'./'+'>Home</a>');
+        } 
+        else{
+          res.render('login.ejs', shopData);
+        }
     });
 
     // Edit your login route to save the user session when login is successful
@@ -146,7 +173,7 @@ app.post('/loggedin', function(req, res) {
             // Passwords match, login successful
             // Save user session here, when login is successful
             req.session.userId = req.body.username;
-            res.send('Welcome, ' + req.body.username + '!');
+            res.send('Welcome, ' + req.body.username + '!' + '<a href='+'./'+'>Home</a>');
           }
           else {
             // Passwords do not match, login failed
@@ -166,6 +193,7 @@ app.post('/loggedin', function(req, res) {
       res.send('you are now logged out. <a href='+'./'+'>Home</a>');
     })
   })
+
   
     
 
