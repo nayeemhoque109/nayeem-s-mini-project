@@ -194,6 +194,70 @@ app.post('/loggedin', function(req, res) {
     })
   })
 
+
+  app.get('/deleteuser', function (req,res) {
+    if (!req.session.userId ) {
+      res.send('you need to login. <a href='+'./login'+'>login</a>');
+      } 
+      else{
+      res.render('deleteuser.ejs', shopData); 
+      }                                                                    
+});                        
+
+app.post('/deleteduser', redirectLogin,function(req, res) {
+  // Compare the form data with the data stored in the database
+  let sqlquery = "SELECT hashed_password FROM users WHERE username = ?"; // query database to get the hashed password for the user
+  // execute sql query
+  let username = req.body.username;
+  db.query(sqlquery, username, (err, result) => {
+    if (err) {
+      return console.error(err.message);
+    }
+    else if (result.length == 0) {
+      // No user found with that username
+      res.send('Invalid username or password');
+    }
+    else {
+      // User found, compare the passwords
+      let hashedPassword = result[0].hashed_password;
+      const bcrypt = require('bcrypt');
+      bcrypt.compare(req.body.password, hashedPassword, function(err, result) {
+        if (err) {
+          // Handle error
+          return console.error(err.message);
+        }
+        else if (result == true) {
+          req.session.destroy(err => {
+            if (err) {
+              return res.redirect('./')
+            }
+            let sqlquery = "DELETE FROM users WHERE username = ?";
+            // execute sql query
+            let usernameToRemove = req.body.username; // Assuming username is the identifier for a user
+            db.query(sqlquery, [usernameToRemove], (err, result) => {
+              if (err) {
+                return console.error(err.message);
+              } else {
+                res.send('User removed from the database, username: ' + usernameToRemove);
+              }
+            });
+
+            
+          });
+  
+        }
+        else {
+          // Passwords do not match, login failed
+          res.send('Invalid username or password');
+        }
+      });
+    }
+  });
+});
+
+  
+  
+
   
     
 
