@@ -4,7 +4,11 @@ var ejs = require('ejs')
 var bodyParser= require ('body-parser')
 var session = require ('express-session');
 const mysql = require('mysql');
+var validator = require ('express-validator');
+const expressSanitizer = require('express-sanitizer');
 
+
+app.use(expressSanitizer());
 
 // Create the express application object
 const app = express()

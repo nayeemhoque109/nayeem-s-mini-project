@@ -1,4 +1,5 @@
 module.exports = function(app, shopData) {
+    const { check, validationResult } = require('express-validator');
 
     const redirectLogin = (req, res, next) => {
         if (!req.session.userId ) {
@@ -21,11 +22,16 @@ module.exports = function(app, shopData) {
           res.render("search.ejs", shopData);
         }
     });
-    app.get('/search-result', function (req, res) {
+    app.get('/search-result', [check('search-box').isEmpty().withMessage('should not be empty')],function (req, res) {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        console.log(errors);
+        res.redirect('./search'); }
+      else {
         //searching in the database
-        //res.send("You searched for: " + req.query.keyword);
+        res.send("You searched for: " + req.sanitize(req.query.keyword));
 
-        let sqlquery = "SELECT * FROM books WHERE name LIKE '%" + req.query.keyword + "%'"; // query database to get all the books
+        let sqlquery = "SELECT * FROM books WHERE name LIKE '%" + req.sanitize(req.query.keyword) + "%'"; // query database to get all the books
         // execute sql query
         db.query(sqlquery, (err, result) => {
             if (err) {
@@ -34,33 +40,44 @@ module.exports = function(app, shopData) {
             let newData = Object.assign({}, shopData, {availableBooks:result});
             console.log(newData)
             res.render("list.ejs", newData)
-         });        
+         });
+        };         
     });
     app.get('/register', function (req,res) {
         res.render('register.ejs', shopData);                                                                     
     });                                                                                                 
-    app.post('/registered', function (req,res) {
+    app.post('/registered', [check('email').isEmail().withMessage('Not a valid e-mail address')],[check('password').isLength({ min: 8 }).withMessage('password must be more than 8 characters')], [check('confirm').custom((value, { req }) => {
+      return value === req.sanitize(req.body.password);
+    }).withMessage('password must match confirm password')],function (req, res) {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+          console.log(errors)
+          res.redirect('./register'); }
+        else {
         // Import bcrypt module
         const bcrypt = require('bcrypt');
         const saltRounds = 10;
-        const plainPassword = req.body.password;
+        const plainPassword = req.sanitize(req.body.password);
 
         // Hash the password before storing it in the database
         bcrypt.hash(plainPassword, saltRounds, function(err, hashedPassword) {
             // Store hashed password in your database.
             let sqlquery = "INSERT INTO users (username, first_name, last_name, email, hashed_password) VALUES (?,?,?,?,?)";
             // execute sql query
-            let newrecord = [req.body.username, req.body.first, req.body.last, req.body.email, hashedPassword];
+            let newrecord = [req.sanitize(req.body.username), req.sanitize(req.body.first)
+              , req.sanitize(req.body.last), req.sanitize(req.body.email), req.sanitize(hashedPassword)];
             db.query(sqlquery, newrecord, (err, result) => {
               if (err) {
                 return console.error(err.message);
               }
               else
               // Output the password and hashedPassword in the response
-              result = 'Hello '+ req.body.first + ' '+ req.body.last +' you are now registered! We will send an email to you at ' + req.body.email + 'Your password is: '+ req.body.password +' and your hashed password is: '+ hashedPassword;
+              result = 'Hello '+ req.sanitize(req.body.first)
+              + ' '+ req.sanitize(req.body.last) +' you are now registered! We will send an email to you at ' + req.sanitize(req.body.email) + 'Your password is: '+ req.sanitize(req.body.password) +' and your hashed password is: '+ req.sanitize(hashedPassword);
               res.send(result);
               });
-        });
+          });
+        }
     }); 
     app.get('/list', function(req, res) {
       if (!req.session.userId ) {
@@ -238,7 +255,7 @@ app.post('/deleteduser', redirectLogin,function(req, res) {
               if (err) {
                 return console.error(err.message);
               } else {
-                res.send('User removed from the database, username: ' + usernameToRemove);
+                res.send('User removed from the database, username: ' + usernameToRemove +'./'+'>Home</a>');
               }
             });
 
