@@ -1,0 +1,14 @@
+<!doctype html>
+<html>
+  <head>
+    <title> <%=shopName%> Weather page</title>
+    <link rel="stylesheet"  type="text/css" href="/main.css" />
+  </head>
+  <body>
+    <h1> <%=shopName%> Please input what city to look at the waether at</h1>
+    <form method="POST" action="/weatherpost">
+        <p>City: <input id="city" type="text" name="city" value="city" required /></p>
+        <input type="submit" value="Submit" />
+      </form>
+  </body>
+</html>

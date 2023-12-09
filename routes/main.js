@@ -110,7 +110,7 @@ module.exports = function(app, shopData) {
            // saving data in database
            let sqlquery = "INSERT INTO books (name, price) VALUES (?,?)";
            // execute sql query
-           let newrecord = [req.body.name, req.body.price];
+           let newrecord = [req.sanitize(req.body.name), req.sanitize(req.body.price)];
            db.query(sqlquery, newrecord, (err, result) => {
              if (err) {
                return console.error(err.message);
@@ -168,7 +168,7 @@ app.post('/loggedin', function(req, res) {
     // Compare the form data with the data stored in the database
     let sqlquery = "SELECT hashed_password FROM users WHERE username = ?"; // query database to get the hashed password for the user
     // execute sql query
-    let username = req.body.username;
+    let username = req.sanitize(req.body.username);
     db.query(sqlquery, username, (err, result) => {
       if (err) {
         return console.error(err.message);
@@ -181,7 +181,7 @@ app.post('/loggedin', function(req, res) {
         // User found, compare the passwords
         let hashedPassword = result[0].hashed_password;
         const bcrypt = require('bcrypt');
-        bcrypt.compare(req.body.password, hashedPassword, function(err, result) {
+        bcrypt.compare(req.sanitize(req.body.password), hashedPassword, function(err, result) {
           if (err) {
             // Handle error
             return console.error(err.message);
@@ -189,8 +189,8 @@ app.post('/loggedin', function(req, res) {
           else if (result == true) {
             // Passwords match, login successful
             // Save user session here, when login is successful
-            req.session.userId = req.body.username;
-            res.send('Welcome, ' + req.body.username + '!' + '<a href='+'./'+'>Home</a>');
+            req.session.userId = req.sanitize(req.body.username);
+            res.send('Welcome, ' + req.sanitize(req.body.username) + '!' + '<a href='+'./'+'>Home</a>');
           }
           else {
             // Passwords do not match, login failed
@@ -238,7 +238,7 @@ app.post('/deleteduser', redirectLogin,function(req, res) {
       // User found, compare the passwords
       let hashedPassword = result[0].hashed_password;
       const bcrypt = require('bcrypt');
-      bcrypt.compare(req.body.password, hashedPassword, function(err, result) {
+      bcrypt.compare(req.sanitize(req.body.password), hashedPassword, function(err, result) {
         if (err) {
           // Handle error
           return console.error(err.message);
@@ -250,7 +250,7 @@ app.post('/deleteduser', redirectLogin,function(req, res) {
             }
             let sqlquery = "DELETE FROM users WHERE username = ?";
             // execute sql query
-            let usernameToRemove = req.body.username; // Assuming username is the identifier for a user
+            let usernameToRemove = req.sanitize(req.body.username); 
             db.query(sqlquery, [usernameToRemove], (err, result) => {
               if (err) {
                 return console.error(err.message);
@@ -258,10 +258,7 @@ app.post('/deleteduser', redirectLogin,function(req, res) {
                 res.send('User removed from the database, username: ' + usernameToRemove +'./'+'>Home</a>');
               }
             });
-
-            
           });
-  
         }
         else {
           // Passwords do not match, login failed
@@ -272,11 +269,37 @@ app.post('/deleteduser', redirectLogin,function(req, res) {
   });
 });
 
-  
-  
+app.get('/weather',function(req,res){
+  res.render('weather.ejs', shopData);
+});
 
+app.post('/weatherpost',function(req,res){
+  const request = require('request');
+  let apiKey = 'ecfc6e660587d658a47319efa5cc69ed';
+  let city = req.sanitize(req.body.city);
+  let url =
+  `http://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`
+  request(url, function (err, response, body) {
+    if(err){
+      console.log('error:', error);
+    } else {
+      //res.send(body);
+      if (weather!==undefined && weather.main!==undefined) {
+        var weather = JSON.parse(body)
+        var wmsg = 'It is '+ weather.main.temp + 
+          ' degrees in '+ weather.name +
+          '! <br> The humidity now is: ' + 
+          weather.main.humidity + '<br> The wind speeds are: ' + 
+          weather.wind.speed;
+        res.send (wmsg);
+      }
+      else{
+        res.send ("No data found");
+      } 
+    }
+  });
+});
   
-    
 
 }
 

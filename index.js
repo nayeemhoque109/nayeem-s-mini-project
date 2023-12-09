@@ -7,13 +7,13 @@ const mysql = require('mysql');
 var validator = require ('express-validator');
 const expressSanitizer = require('express-sanitizer');
 
-
-app.use(expressSanitizer());
-
 // Create the express application object
 const app = express()
 const port = 8000
 app.use(bodyParser.urlencoded({ extended: true }))
+
+
+app.use(expressSanitizer());
 
 // Create a session
 app.use(session({
@@ -61,6 +61,7 @@ var shopData = {shopName: "nayeem's Books"}
 
 // Requires the main.js file inside the routes folder passing in the Express app and data as arguments.  All the routes will go in this file
 require("./routes/main")(app, shopData);
+
 
 // Start the web app listening
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
