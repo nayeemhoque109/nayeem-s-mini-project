@@ -299,7 +299,77 @@ app.post('/weatherpost',function(req,res){
     }
   });
 });
-  
 
+app.get('/api', function (req,res) {
+  // Query database to get all the books
+ let sqlquery = "SELECT * FROM books"; 
+ // Execute the sql query
+ db.query(sqlquery, (err, result) => {
+ if (err) {
+ res.redirect('./');
+ }
+ // Return results as a JSON object
+ res.json(result); 
+ });
+ });
+ 
+
+app.get('/api/:keyword', function (req, res) {
+  // Get the keyword parameter from the URL
+  let keyword = req.params.keyword;
+  // Declare the SQL query variable
+  let sqlquery;
+  // Check if the keyword parameter is defined or not
+  if (keyword) {
+    // If it is defined, use a SQL query that filters the books by the keyword in the title
+    sqlquery = "SELECT * FROM books WHERE name LIKE '%" + keyword + "%'";
+  
+  } else {
+    res.redirect('./api');
+  }
+  // Execute the SQL query
+  db.query(sqlquery, (err, result) => {
+    if (err) {
+      res.redirect('./');
+    }
+    // Return the results as a JSON object
+    res.json(result);
+  });
+});
+
+app.get('/tvapi',function(req,res){
+  if (!req.session.userId ) {
+    res.send('you need to login. <a href='+'./login'+'>login</a>');
+    } 
+    else{
+      res.render("tvapi.ejs", shopData);
+    }
+});
+
+app.get('/tvshows-result',function(req,res){
+  const request = require('request');
+  let keyword = req.sanitize(req.query.keyword);
+  let url =
+  `https://api.tvmaze.com/search/shows?q=${keyword}`
+  request(url, function (err, response, body) {
+    if (err) {
+      console.log('error:', err);
+    } else {
+      if (body !== undefined) {
+        var show = JSON.parse(body);
+        // Pass the parsed JSON data to the EJS file for rendering
+        let newData = Object.assign({}, shopData, { showData: show });
+        console.log(newData)
+        res.render('tvshows-result.ejs', newData);
+      }
+      else{
+        res.send ("No data found");
+      } 
+    }
+  });
+});
+
+ 
+ 
 }
 

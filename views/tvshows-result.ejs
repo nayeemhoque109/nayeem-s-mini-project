@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Welcome to <%=shopName%></title>
+    <link rel="stylesheet"  type="text/css" href="/main.css" />
+  </head>
+  <body>
+    <h1><%=shopName%> Shop</h1>
+    <h2>Below is the information for the tv series you have requested for:</h2>
+    <ul>
+      <% showData.forEach(function(show) { %>
+        <li><%= show.show.name %></li>
+        <li><%= show.show.rating.average %></li>
+        <li><%= show.show.type %></li>
+        <li><%= show.show.genre %></li>
+        <li><%= show.show.premiered %></li>
+      <% }) %>
+    </ul>
+    </body>
+</html>
