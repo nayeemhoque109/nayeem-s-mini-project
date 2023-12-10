@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Welcome to <%=shopName%></title>
+    <link rel="stylesheet"  type="text/css" href="/main.css" />
+  </head>
+  <body>
+    <h1><%=shopName%> Shop</h1>
+    <h2>Messages</h2>
+    <ul>
+      <% chatData.forEach(function(chat) { %>
+        <li><%= chat.sender %>, <%=chat.message%> </li>
+      <% }) %>
+    </ul>
+    </body>
+</html>

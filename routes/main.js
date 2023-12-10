@@ -368,8 +368,48 @@ app.get('/tvshows-result',function(req,res){
     }
   });
 });
+app.get('/chat',function(req,res){
+  if (!req.session.userId ) {
+    res.send('you need to login. <a href='+'./login'+'>login</a>');
+    } 
+    else{
+      res.render("chat.ejs", shopData);
+    }
+}); 
 
- 
+app.post('/chat-result', function(req, res) {
+
+    let sqlquery = "INSERT INTO chat (sender,receiver,message) VALUES (?,?,?)";
+      // execute sql query
+      let newrecord = [req.session.userId, req.body.username,req.body.message];
+      db.query(sqlquery, newrecord, (err, result) => {
+        if (err) {
+          return console.error(err.message);
+        }
+        else
+        // output sent message
+        result = 'Hello '+ req.sanitize(req.session.userId)
+        + ' your message to '+ req.sanitize(req.body.username) +' has been sent '+ '<a href='+'./chat-message'+'>See message</a>';
+        res.send(result);
+        });
+    
+});
+
+app.get('/chat-message', function(req, res) {
+
+  //username and username2 for testing. make username req.session.userId and username2 selected from list
+    let sqlquery = "SELECT * FROM chat WHERE (sender = 'username' AND receiver = 'username2') OR (sender = 'username2' AND receiver = 'username') ORDER BY timestamp;"; // query database to get all the books
+      // execute sql query
+      db.query(sqlquery, (err, result) => {
+          if (err) {
+              res.redirect('./'); 
+          }
+          let newData = Object.assign({}, shopData, {chatData:chat});
+          console.log(newData)
+          res.render("chat-message.ejs", newData)
+      });
+    
+});
  
 }
 
