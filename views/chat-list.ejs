@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Welcome to <%=shopName%></title>
+    <link rel="stylesheet"  type="text/css" href="/main.css" />
+  </head>
+  <body>
+    <h1><%=shopName%></h1>
+    <h2>User list:</h2>
+    <ul>
+      <% availableUsers.forEach(function(user) { %>
+        <li><a href="chat-message/<%= user.username %>"><%= user.username %></a></li>
+      <% }) %>
+    </ul>
+    <p><a href="chat">Send message</a></p>
+    <p><a href="gif">Send GIF</a></p>
+    </body>
+</html>

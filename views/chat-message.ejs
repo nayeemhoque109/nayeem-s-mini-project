@@ -9,7 +9,11 @@
     <h2>Messages</h2>
     <ul>
       <% chatData.forEach(function(chat) { %>
-        <li><%= chat.sender %>, <%=chat.message%> </li>
+        <li>
+          <%= chat.sender %>, <%=chat.message%>  
+          <img src="<%= chat.url %>" alt="<%= chat.title %>" />
+          <%= chat.title %>, <%= chat.timestamp_formatted %>
+        </li>
       <% }) %>
     </ul>
     </body>

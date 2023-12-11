@@ -11,3 +11,25 @@ CREATE TABLE users (
   email VARCHAR(50) NOT NULL,
   hashed_password VARCHAR(255) NOT NULL
 );
+CREATE TABLE chat (
+  sender VARCHAR(20),
+  receiver VARCHAR(20),
+  message TEXT DEFAULT NULL,
+  url VARCHAR(255) DEFAULT NULL,
+  title VARCHAR(255) DEFAULT NULL,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  timestamp_formatted VARCHAR(19) GENERATED ALWAYS AS (DATE_FORMAT(timestamp, '%Y-%m-%d %H:%i:%s')) STORED,
+  FOREIGN KEY (sender) REFERENCES users(username),
+  FOREIGN KEY (receiver) REFERENCES users(username)
+);
+
+USE myBookshop;
+SELECT * FROM users;
+SELECT * FROM chat;
+
+SELECT * FROM books;
+
+INSERT INTO users (username, first_name, last_name, email, hashed_password)VALUES ('username2', 'first name', 'last name', 'email@dscsk.com', '$2b$10$zrc8kXAw.L4qDQQJa/jsiulOfIphI5B28iLI/mOzVm6xeEktoblRq');
+
+INSERT INTO users (username, first_name, last_name, email, hashed_password)VALUES ('username', 'first name', 'last name', 'sad@ksmd.ccom', '$2b$10$CpCpRsgy8UyUF03rm/cpoedsnJnZgraxUWI32dOMjMgxrVtk9DHVy');
+

@@ -377,11 +377,83 @@ app.get('/chat',function(req,res){
     }
 }); 
 
-app.post('/chat-result', function(req, res) {
+app.post('/chat-send', function(req, res) {
+  let sqlquery = "INSERT INTO chat (sender,receiver,message) VALUES (?,?,?)";
+    // execute sql query
+    let newrecord = [req.session.userId, req.body.username,req.body.message];
+    db.query(sqlquery, newrecord, (err, result) => {
+      if (err) {
+        return console.error(err.message);
+      }
+      else
+      // output sent message
+      result = 'Hello '+ req.sanitize(req.session.userId)
+      + ' your message to '+ req.sanitize(req.body.username) +' has been sent '+ '<a href='+'./chat-list'+'>See message</a>';
+      res.send(result);
+    });
+});
 
-    let sqlquery = "INSERT INTO chat (sender,receiver,message) VALUES (?,?,?)";
+app.get('/chat-list', function(req, res) {
+  if (!req.session.userId ) {
+    res.send('you need to login. <a href='+'./login'+'>login</a>');
+    } 
+    else{
+      let sqlquery = "SELECT username FROM users"; // query database to get all the users
       // execute sql query
-      let newrecord = [req.session.userId, req.body.username,req.body.message];
+      db.query(sqlquery, (err, result) => {
+          if (err) {
+              res.redirect('./'); 
+          }
+          let newData = Object.assign({}, shopData, {availableUsers:result});
+          console.log(newData)
+          res.render("chat-list.ejs", newData)
+      });
+    }
+});
+app.get('/chat-message/:keyword', function(req, res) {
+//var username2 = 'username2'
+// Get the keyword parameter from the URL
+let keyword = req.sanitize(req.params.keyword);
+let sqlquery = "SELECT * FROM chat WHERE (sender = '" + req.sanitize(req.session.userId) + "' AND receiver = '" + keyword + "') OR (sender = '" + keyword + "' AND receiver = '"+ req.sanitize(req.session.userId) + "') ORDER BY timestamp;"; // query database to get all the books
+  // execute sql query
+  console.log(sqlquery);
+  db.query(sqlquery, (err, result) => {
+      if (err) {
+        res.redirect('./'); 
+      }
+      let newData = Object.assign({}, shopData, {chatData:result});
+      console.log(newData)
+      res.render("chat-message.ejs", newData)
+  }); 
+});
+
+app.get('/gif',function(req,res){
+  if (!req.session.userId ) {
+    res.send('you need to login. <a href='+'./login'+'>login</a>');
+    } 
+    else{
+      res.render("gif.ejs", shopData);
+    }
+});
+
+app.post('/gif-send', async(req, res) => {
+  try {
+    const APIKEY = '1344jP0UiEy5Eom8CsVIWryP4JrIg8rp';
+    const gif = req.sanitize(req.body.gif);
+    const url = `https://api.giphy.com/v1/gifs/search?api_key=${APIKEY}&limit=1&q=${gif}`;
+
+    const response = await fetch(url);
+    const content = await response.json();
+
+    const gifData = {
+      url: content.data[0].images.downsized.url,
+      title: content.data[0].title,
+    };
+
+    // Insert into the database
+    let sqlquery = "INSERT INTO chat (sender,receiver,url,title) VALUES (?,?,?,?)";
+      // execute sql query
+      let newrecord = [req.session.userId, req.body.username,content.data[0].images.downsized.url,content.data[0].title];
       db.query(sqlquery, newrecord, (err, result) => {
         if (err) {
           return console.error(err.message);
@@ -389,27 +461,13 @@ app.post('/chat-result', function(req, res) {
         else
         // output sent message
         result = 'Hello '+ req.sanitize(req.session.userId)
-        + ' your message to '+ req.sanitize(req.body.username) +' has been sent '+ '<a href='+'./chat-message'+'>See message</a>';
+        + ' your GIF to '+ req.sanitize(req.body.username) +' has been sent '+ '<a href='+'./chat-list'+'>See message</a>';
         res.send(result);
-        });
-    
+    });
+  }catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
 
-app.get('/chat-message', function(req, res) {
-
-  //username and username2 for testing. make username req.session.userId and username2 selected from list
-    let sqlquery = "SELECT * FROM chat WHERE (sender = 'username' AND receiver = 'username2') OR (sender = 'username2' AND receiver = 'username') ORDER BY timestamp;"; // query database to get all the books
-      // execute sql query
-      db.query(sqlquery, (err, result) => {
-          if (err) {
-              res.redirect('./'); 
-          }
-          let newData = Object.assign({}, shopData, {chatData:chat});
-          console.log(newData)
-          res.render("chat-message.ejs", newData)
-      });
-    
-});
- 
 }
-
