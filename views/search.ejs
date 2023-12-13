@@ -1,14 +1,35 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
   <head>
-    <title>Search <%=shopName%></title>
-    <link rel="stylesheet"  type="text/css" href="/main.css" />
-  </head>
-  <body>
-    <h1>Search <%=shopName%></h1>
+    <title>Welcome to <%=shopName%></title>
+    <meta name="viewport" content="with=device-width, initial-scale=1.0">
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100;0,200;0,600;0,700;1,300;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+<body>
+    <section class="header-sub">
+        <nav>
+            <div class="navi" id = "menu">
+                <i class="fa fa-times-circle" onclick="menuExit()"></i>
+                <ul>
+                    <li><a href="search">Search for books</a></li>
+                    <li><a href="register">Register with us</a></li>
+                    <li><a href="login">login</a></li>
+                    <li><a href="logout">logout</a></li>
+                    <li><a href="weather">Weather</a></li>
+                    <li><a href="chat-list">Chats</a></li>
+                </ul>    
+            </div>
+            <i class="fa fa-bars" onclick="showMenu()"></i>
+        </nav>
+        <h1>Search for friend</h1>  
+  </section>
     <form action="/search-result" method="GET">
-      <p>What book do you want?</p>
-      <input id="search-box" type="text" name="keyword" value="Default">
+      <input id="keyword" type="text" name="keyword" value="username">
       <input type="submit" value="Search" >
     </form>
   </body>

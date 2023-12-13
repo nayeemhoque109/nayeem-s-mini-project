@@ -17,8 +17,6 @@
                 <i class="fa fa-times-circle" onclick="menuExit()"></i>
                 <ul>
                     <li><a href="search">Search for books</a></li>
-                    <li><a href="register">Register with us</a></li>
-                    <li><a href="login">login</a></li>
                     <li><a href="logout">logout</a></li>
                     <li><a href="weather">Weather</a></li>
                     <li><a href="chat-list">Chats</a></li>
@@ -26,12 +24,36 @@
             </div>
             <i class="fa fa-bars" onclick="showMenu()"></i>
         </nav>
-        <h1>Login</h1>  
+        <h1>Chats List</h1>  
   </section>
-    <form method="POST" action="/loggedin">
-        <p>Username: <input id="username" type="text" name="username" value="username" required /></p>
-        <p>Password: <input id="password" type="password" name="password" value="password" required /></p>
-        <input type="submit" value="Login" />
-      </form>
-  </body>
+
+    <section class="firstsec">
+    <ul>
+    
+      <div class="row">
+          <div class="firstsec-col">
+      <% availableUsers.forEach(function(user) { %>         
+          <li><%= user.username %></li>
+              <% }) %>    
+            </div>
+
+        
+    </ul>
+      </div>
+  </section>
+
+
+    </body>
+  </section>
+  <script>
+    var menu = document.getElementById("menu");
+    
+    function showMenu(){
+        menu.style.right = "0";
+    }
+    
+    function menuExit(){
+        menu.style.right = "-199px";
+    }
+</script>
 </html>

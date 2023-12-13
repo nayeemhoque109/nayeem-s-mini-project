@@ -1,18 +1,63 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
   <head>
     <title>Welcome to <%=shopName%></title>
-    <link rel="stylesheet"  type="text/css" href="/main.css" />
-  </head>
-  <body>
-    <h1><%=shopName%></h1>
-    <h2>User list:</h2>
+    <meta name="viewport" content="with=device-width, initial-scale=1.0">
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100;0,200;0,600;0,700;1,300;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+<body>
+    <section class="header-sub">
+        <nav>
+            <div class="navi" id = "menu">
+                <i class="fa fa-times-circle" onclick="menuExit()"></i>
+                <ul>
+                    <li><a href="search">Search for books</a></li>
+                    <li><a href="logout">logout</a></li>
+                    <li><a href="weather">Weather</a></li>
+                    <li><a href="chat-list">Chats</a></li>
+                </ul>    
+            </div>
+            <i class="fa fa-bars" onclick="showMenu()"></i>
+        </nav>
+        <h1>Chats List</h1>  
+  </section>
+
+    <section class="firstsec">
     <ul>
-      <% availableUsers.forEach(function(user) { %>
-        <li><a href="chat-message/<%= user.username %>"><%= user.username %></a></li>
-      <% }) %>
+    
+      <div class="row">
+          <div class="firstsec-col">
+      <% availableUsers.forEach(function(user) { %>         
+              <li><a href="chat-message/<%= user.username %>"><%= user.username %></a></li>
+              <% }) %>    
+            </div>
+          <div class="firstsec-col">
+            <h3><a href="chat">Send message</a></h3>
+            <h3><a href="gif">Send GIF</a></h3>
+            <h3><a href="requests">Friend requests</a></h3>
+          </div>
+        
     </ul>
-    <p><a href="chat">Send message</a></p>
-    <p><a href="gif">Send GIF</a></p>
+      </div>
+  </section>
+
+
     </body>
+  </section>
+  <script>
+    var menu = document.getElementById("menu");
+    
+    function showMenu(){
+        menu.style.right = "0";
+    }
+    
+    function menuExit(){
+        menu.style.right = "-199px";
+    }
+</script>
 </html>

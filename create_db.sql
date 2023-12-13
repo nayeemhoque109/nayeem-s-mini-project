@@ -18,7 +18,19 @@ CREATE TABLE chat (
   url VARCHAR(255) DEFAULT NULL,
   title VARCHAR(255) DEFAULT NULL,
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  timestamp_formatted VARCHAR(19) GENERATED ALWAYS AS (DATE_FORMAT(timestamp, '%Y-%m-%d %H:%i:%s')) STORED,
+  timestamp_formatted VARCHAR(19) GENERATED ALWAYS AS (DATE_FORMAT(timestamp, '%d-%m-%Y %H:%i')) STORED,
+  FOREIGN KEY (sender) REFERENCES users(username),
+  FOREIGN KEY (receiver) REFERENCES users(username)
+);
+
+CREATE TABLE friends (
+  sender VARCHAR(20),
+  receiver VARCHAR(20),
+  message TEXT DEFAULT NULL,
+  url VARCHAR(255) DEFAULT NULL,
+  title VARCHAR(255) DEFAULT NULL,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  timestamp_formatted VARCHAR(19) GENERATED ALWAYS AS (DATE_FORMAT(timestamp, '%d-%m-%Y %H:%i')) STORED,
   FOREIGN KEY (sender) REFERENCES users(username),
   FOREIGN KEY (receiver) REFERENCES users(username)
 );
@@ -26,6 +38,7 @@ CREATE TABLE chat (
 USE myBookshop;
 SELECT * FROM users;
 SELECT * FROM chat;
+SELECT * FROM friends;
 
 SELECT * FROM books;
 

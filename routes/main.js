@@ -11,9 +11,7 @@ module.exports = function(app, shopData) {
     app.get('/',function(req,res){
         res.render('index.ejs', shopData)
     });
-    app.get('/about',function(req,res){
-        res.render('about.ejs', shopData);
-    });
+
     app.get('/search',function(req,res){
       if (!req.session.userId ) {
         res.send('you need to login. <a href='+'./login'+'>login</a>');
@@ -29,20 +27,41 @@ module.exports = function(app, shopData) {
         res.redirect('./search'); }
       else {
         //searching in the database
-        res.send("You searched for: " + req.sanitize(req.query.keyword));
+        //res.send("You searched for: " + req.sanitize(req.query.keyword));
 
-        let sqlquery = "SELECT * FROM books WHERE name LIKE '%" + req.sanitize(req.query.keyword) + "%'"; // query database to get all the books
+        let sqlquery = "SELECT * FROM users WHERE username LIKE '%" + req.sanitize(req.query.keyword) + "%'"; // query database to get all the books
         // execute sql query
         db.query(sqlquery, (err, result) => {
             if (err) {
                 res.redirect('./'); 
             }
-            let newData = Object.assign({}, shopData, {availableBooks:result});
+            let newData = Object.assign({}, shopData, {availableUsers:result});
             console.log(newData)
-            res.render("list.ejs", newData)
+            res.render("friend-request.ejs", newData)
          });
         };         
     });
+
+    app.get('/friend-request/:keyword', function(req, res) {
+      if (!req.session.userId ) {
+        res.send('you need to login. <a href='+'../login'+'>login</a>');
+        } 
+        else{  // Get the keyword parameter from the URL
+          let keyword = req.sanitize(req.params.keyword);
+          let sqlquery = "INSERT INTO friends (sender,receiver,message) VALUES (?,?,?)";
+          // execute sql query
+          let newrecord = [req.session.userId, keyword,'friend'];
+          db.query(sqlquery, newrecord, (err, result) => {
+            if (err) {
+              console.error(err.message);
+              res.send('The user may already be added');
+            }
+                res.send('Your request to, ' + keyword+ 'has been sent' + '<a href='+'../chat-list'+'>Go back?</a>');
+
+            });
+        }  
+    });
+
     app.get('/register', function (req,res) {
         res.render('register.ejs', shopData);                                                                     
     });                                                                                                 
@@ -73,71 +92,12 @@ module.exports = function(app, shopData) {
               else
               // Output the password and hashedPassword in the response
               result = 'Hello '+ req.sanitize(req.body.first)
-              + ' '+ req.sanitize(req.body.last) +' you are now registered! We will send an email to you at ' + req.sanitize(req.body.email) + 'Your password is: '+ req.sanitize(req.body.password) +' and your hashed password is: '+ req.sanitize(hashedPassword);
+              + ' '+ req.sanitize(req.body.last) +' you are now registered! We will send an email to you at ' + req.sanitize(req.body.email) + 'Your password is: '+ req.sanitize(req.body.password) +' and your hashed password is: '+ req.sanitize(hashedPassword) + '<a href='+'./'+'>Home</a>';
               res.send(result);
               });
           });
         }
     }); 
-    app.get('/list', function(req, res) {
-      if (!req.session.userId ) {
-        res.send('you need to login. <a href='+'./login'+'>login</a>');
-        } 
-        else{
-        let sqlquery = "SELECT * FROM books"; // query database to get all the books
-          // execute sql query
-          db.query(sqlquery, (err, result) => {
-              if (err) {
-                  res.redirect('./'); 
-              }
-              let newData = Object.assign({}, shopData, {availableBooks:result});
-              console.log(newData)
-              res.render("list.ejs", newData)
-          });
-        }
-    });
-
-    app.get('/addbook', function (req, res) {
-      if (!req.session.userId ) {
-        res.send('you need to login. <a href='+'./login'+'>login</a>');
-        } 
-        else{
-          res.render('addbook.ejs', shopData);
-        }
-     });
- 
-     app.post('/bookadded', function (req,res) {
-           // saving data in database
-           let sqlquery = "INSERT INTO books (name, price) VALUES (?,?)";
-           // execute sql query
-           let newrecord = [req.sanitize(req.body.name), req.sanitize(req.body.price)];
-           db.query(sqlquery, newrecord, (err, result) => {
-             if (err) {
-               return console.error(err.message);
-             }
-             else
-             res.send(' This book is added to database, name: '+ req.body.name + ' price '+ req.body.price);
-             });
-       });    
-
-       app.get('/bargainbooks', function(req, res) {
-        if (!req.session.userId ) {
-          res.send('you need to login. <a href='+'./login'+'>login</a>');
-          } 
-          else{
-            let sqlquery = "SELECT * FROM books WHERE price < 20";
-        db.query(sqlquery, (err, result) => {
-          if (err) {
-             res.redirect('./');
-          }
-          let newData = Object.assign({}, shopData, {availableBooks:result});
-          console.log(newData)
-          res.render("bargains.ejs", newData)
-        });
-
-          }
-        
-    });       
 
     // Add a /listusers route and page to display the user details
     app.get('/listusers', function(req, res) {
@@ -378,6 +338,7 @@ app.get('/chat',function(req,res){
 }); 
 
 app.post('/chat-send', function(req, res) {
+  //TODO:username must be in friends too and add error if username is not in friends
   let sqlquery = "INSERT INTO chat (sender,receiver,message) VALUES (?,?,?)";
     // execute sql query
     let newrecord = [req.session.userId, req.body.username,req.body.message];
@@ -398,33 +359,78 @@ app.get('/chat-list', function(req, res) {
     res.send('you need to login. <a href='+'./login'+'>login</a>');
     } 
     else{
-      let sqlquery = "SELECT username FROM users"; // query database to get all the users
-      // execute sql query
-      db.query(sqlquery, (err, result) => {
+      let sanitizedUsername = req.sanitize(req.session.userId);
+      let sqlquery = `
+      SELECT DISTINCT username
+      FROM (
+          SELECT receiver AS username
+          FROM chat
+          WHERE sender = ?
+          UNION
+          SELECT sender AS username
+          FROM chat
+          WHERE receiver = ?
+      ) AS chatUsers;
+  `;      // execute sql query
+      db.query(sqlquery, [sanitizedUsername, sanitizedUsername],(err, result) => {
           if (err) {
               res.redirect('./'); 
           }
           let newData = Object.assign({}, shopData, {availableUsers:result});
           console.log(newData)
+          console.log(sqlquery)
           res.render("chat-list.ejs", newData)
       });
     }
 });
+
+app.get('/requests', function(req, res) {
+  if (!req.session.userId ) {
+    res.send('you need to login. <a href='+'./login'+'>login</a>');
+    } 
+    else{
+      let sanitizedUsername = req.sanitize(req.session.userId);
+      let sqlquery = `
+      SELECT DISTINCT username
+      FROM (
+          SELECT receiver AS username
+          FROM friends
+          WHERE sender = ?
+          UNION
+          SELECT sender AS username
+          FROM friends
+          WHERE receiver = ?
+      ) AS friendsUsers;
+  `;      // execute sql query
+      db.query(sqlquery, [sanitizedUsername, sanitizedUsername],(err, result) => {
+          if (err) {
+              res.redirect('./'); 
+          }
+          let newData = Object.assign({}, shopData, {availableUsers:result});
+          console.log(newData)
+          console.log(sqlquery)
+          res.render("requests.ejs", newData)
+      });
+    }
+});
 app.get('/chat-message/:keyword', function(req, res) {
-//var username2 = 'username2'
-// Get the keyword parameter from the URL
-let keyword = req.sanitize(req.params.keyword);
-let sqlquery = "SELECT * FROM chat WHERE (sender = '" + req.sanitize(req.session.userId) + "' AND receiver = '" + keyword + "') OR (sender = '" + keyword + "' AND receiver = '"+ req.sanitize(req.session.userId) + "') ORDER BY timestamp;"; // query database to get all the books
-  // execute sql query
-  console.log(sqlquery);
-  db.query(sqlquery, (err, result) => {
-      if (err) {
-        res.redirect('./'); 
-      }
-      let newData = Object.assign({}, shopData, {chatData:result});
-      console.log(newData)
-      res.render("chat-message.ejs", newData)
-  }); 
+  if (!req.session.userId ) {
+    res.send('you need to login. <a href='+'../login'+'>login</a>');
+    } 
+    else{  // Get the keyword parameter from the URL
+      let keyword = req.sanitize(req.params.keyword);
+      let sqlquery = "SELECT * FROM chat WHERE (sender = '" + req.sanitize(req.session.userId) + "' AND receiver = '" + keyword + "') OR (sender = '" + keyword + "' AND receiver = '"+ req.sanitize(req.session.userId) + "') ORDER BY timestamp;"; // query database to get all the books
+        // execute sql query
+        console.log(sqlquery);
+        db.query(sqlquery, (err, result) => {
+            if (err) {
+              res.redirect('./'); 
+            }
+            let newData = Object.assign({}, shopData, {chatData:result});
+            console.log(newData)
+            res.render("chat-message.ejs", newData)
+        });
+    }  
 });
 
 app.get('/gif',function(req,res){
