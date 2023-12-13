@@ -16,7 +16,6 @@
             <div class="navi" id = "menu">
                 <i class="fa fa-times-circle" onclick="menuExit()"></i>
                 <ul>
-                    <li><a href="search">Search for books</a></li>
                     <li><a href="logout">logout</a></li>
                     <li><a href="weather">Weather</a></li>
                     <li><a href="chat-list">Chats</a></li>
@@ -24,7 +23,7 @@
             </div>
             <i class="fa fa-bars" onclick="showMenu()"></i>
         </nav>
-        <h1>Chats List</h1>  
+        <h1>Friends requests</h1>  
   </section>
 
     <section class="firstsec">
@@ -33,9 +32,13 @@
       <div class="row">
           <div class="firstsec-col">
       <% availableUsers.forEach(function(user) { %>         
-          <li><%= user.username %></li>
+          <h3><%= user.username %></h3>
               <% }) %>    
             </div>
+
+            <div class="firstsec-col">
+                <h3><a href="search">Add friend back</a></h3>
+              </div>
 
         
     </ul>
@@ -43,7 +46,7 @@
   </section>
 
 
-    </body>
+    
   </section>
   <script>
     var menu = document.getElementById("menu");
@@ -56,4 +59,5 @@
         menu.style.right = "-199px";
     }
 </script>
+</body>
 </html>

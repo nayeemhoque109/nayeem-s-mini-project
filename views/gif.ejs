@@ -16,9 +16,6 @@
             <div class="navi" id = "menu">
                 <i class="fa fa-times-circle" onclick="menuExit()"></i>
                 <ul>
-                    <li><a href="search">Search for books</a></li>
-                    <li><a href="register">Register with us</a></li>
-                    <li><a href="login">login</a></li>
                     <li><a href="logout">logout</a></li>
                     <li><a href="weather">Weather</a></li>
                     <li><a href="chat-list">Chats</a></li>
@@ -33,5 +30,17 @@
         <p>GIF search: <input id="gif" type="text" name="gif" value="gif" /></p>
         <input type="submit" value="Send" />
       </form>
-  </body>
+  
+  <script>
+    var menu = document.getElementById("menu");
+    
+    function showMenu(){
+        menu.style.right = "0";
+    }
+    
+    function menuExit(){
+        menu.style.right = "-199px";
+    }
+</script>
+</body>
 </html>

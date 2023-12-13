@@ -16,9 +16,6 @@
             <div class="navi" id = "menu">
                 <i class="fa fa-times-circle" onclick="menuExit()"></i>
                 <ul>
-                    <li><a href="search">Search for books</a></li>
-                    <li><a href="register">Register with us</a></li>
-                    <li><a href="login">login</a></li>
                     <li><a href="logout">logout</a></li>
                     <li><a href="weather">Weather</a></li>
                     <li><a href="chat-list">Chats</a></li>
@@ -26,11 +23,22 @@
             </div>
             <i class="fa fa-bars" onclick="showMenu()"></i>
         </nav>
-        <h1>Search for friend</h1>  
+        <h1>Add friend</h1>  
   </section>
     <form action="/search-result" method="GET">
       <input id="keyword" type="text" name="keyword" value="username">
       <input type="submit" value="Search" >
     </form>
+    <script>
+      var menu = document.getElementById("menu");
+      
+      function showMenu(){
+          menu.style.right = "0";
+      }
+      
+      function menuExit(){
+          menu.style.right = "-199px";
+      }
+  </script>
   </body>
 </html>

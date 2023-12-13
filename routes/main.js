@@ -50,17 +50,139 @@ module.exports = function(app, shopData) {
           let keyword = req.sanitize(req.params.keyword);
           let sqlquery = "INSERT INTO friends (sender,receiver,message) VALUES (?,?,?)";
           // execute sql query
-          let newrecord = [req.session.userId, keyword,'friend'];
+          let newrecord = [req.session.userId, keyword,'sent'];
           db.query(sqlquery, newrecord, (err, result) => {
             if (err) {
               console.error(err.message);
               res.send('The user may already be added');
             }
-                res.send('Your request to, ' + keyword+ 'has been sent' + '<a href='+'../chat-list'+'>Go back?</a>');
+                res.send('Your request to, ' + keyword+ ' has been sent ' + '<a href='+'../chat-list'+'>Go back?</a>');
 
             });
         }  
     });
+
+    app.get('/requests', function(req, res) {
+      if (!req.session.userId) {
+          res.send('You need to login. <a href="./login">Login</a>');
+      } else {
+          let sanitizedUsername = req.sanitize(req.session.userId);
+          let sqlquery = `
+              SELECT DISTINCT username
+              FROM (
+                  SELECT receiver AS username
+                  FROM friends
+                  WHERE sender = ? AND receiver != ?
+                  UNION
+                  SELECT sender AS username
+                  FROM friends
+                  WHERE receiver = ? AND sender != ?
+              ) AS friendsUsers;
+          `;
+          // execute sql query
+          db.query(sqlquery, [sanitizedUsername, sanitizedUsername, sanitizedUsername, sanitizedUsername], (err, result) => {
+              if (err) {
+                  res.redirect('./');
+              }
+              let newData = Object.assign({}, shopData, { availableUsers: result });
+              console.log(newData);
+              console.log(sqlquery);
+              res.render("requests.ejs", newData);
+          });
+        }
+    });
+
+    app.get('/friends-list', function(req, res) {
+      if (!req.session.userId) {
+          res.send('You need to login. <a href="./login">Login</a>');
+      } else {
+          let sanitizedUsername = req.sanitize(req.session.userId);
+          
+          let sqlquery = `
+              SELECT DISTINCT username
+              FROM (
+                  SELECT receiver AS username
+                  FROM friends
+                  WHERE sender = ? AND receiver IN (SELECT sender FROM friends WHERE receiver = ?)
+                  UNION
+                  SELECT sender AS username
+                  FROM friends
+                  WHERE receiver = ? AND sender IN (SELECT receiver FROM friends WHERE sender = ?)
+              ) AS mutualFriendsUsers;
+          `;
+  
+          // execute sql query
+          db.query(sqlquery, [sanitizedUsername, sanitizedUsername, sanitizedUsername, sanitizedUsername], (err, result) => {
+              if (err) {
+                  res.redirect('./');
+              }
+              let newData = Object.assign({}, shopData, { availableUsers: result });
+              console.log(newData);
+              console.log(sqlquery);
+              res.render("friends-list.ejs", newData);
+          });
+        }
+    });
+    
+    app.get('/group',function(req,res){
+      if (!req.session.userId ) {
+        res.send('you need to login. <a href='+'./login'+'>login</a>');
+        } 
+        else{
+          res.render("add-to-group.ejs", shopData);
+        }
+    }); 
+    
+    app.post('/group-add', function(req, res) {
+      if (!req.session.userId) {
+        return res.send('You need to login. <a href="./login">Login</a>');
+      }
+    
+      const admin = req.sanitize(req.session.userId);
+      const userToAdd = req.sanitize(req.body.username);
+    
+      // Generate a unique group name, you might use a more sophisticated method in production
+      const groupName = `group_${Date.now()}`;
+    
+      // Create the group table
+      const createTableQuery = `
+        CREATE TABLE ${groupName} (
+          admin VARCHAR(20),
+          users VARCHAR(20),
+          message TEXT DEFAULT NULL,
+          url VARCHAR(255) DEFAULT NULL,
+          title VARCHAR(255) DEFAULT NULL,
+          timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          timestamp_formatted VARCHAR(19) GENERATED ALWAYS AS (DATE_FORMAT(timestamp, '%d-%m-%Y %H:%i')) STORED,
+          FOREIGN KEY (admin) REFERENCES users(username),
+          FOREIGN KEY (users) REFERENCES users(username)
+        )
+      `;
+    
+      db.query(createTableQuery, (createErr, createResult) => {
+        if (createErr) {
+          return console.error(createErr.message);
+        }
+    
+        // Insert the user to the group
+        const insertQuery = `
+          INSERT INTO ${groupName} (admin, users)
+          VALUES (?, ?)
+        `;
+    
+        db.query(insertQuery, [admin, userToAdd], (err, result) => {
+          if (err) {
+            return console.error(err.message);
+          }
+    
+          const outputMessage = `Hello ${admin}, you have added ${userToAdd} to the group. 
+            <a href='./chat-list'>See messages</a>`;
+          
+          res.send(outputMessage);
+        });
+      });
+    });
+    
 
     app.get('/register', function (req,res) {
         res.render('register.ejs', shopData);                                                                     
@@ -338,7 +460,6 @@ app.get('/chat',function(req,res){
 }); 
 
 app.post('/chat-send', function(req, res) {
-  //TODO:username must be in friends too and add error if username is not in friends
   let sqlquery = "INSERT INTO chat (sender,receiver,message) VALUES (?,?,?)";
     // execute sql query
     let newrecord = [req.session.userId, req.body.username,req.body.message];
@@ -361,19 +482,19 @@ app.get('/chat-list', function(req, res) {
     else{
       let sanitizedUsername = req.sanitize(req.session.userId);
       let sqlquery = `
-      SELECT DISTINCT username
-      FROM (
-          SELECT receiver AS username
-          FROM chat
-          WHERE sender = ?
-          UNION
-          SELECT sender AS username
-          FROM chat
-          WHERE receiver = ?
-      ) AS chatUsers;
-  `;      // execute sql query
-      db.query(sqlquery, [sanitizedUsername, sanitizedUsername],(err, result) => {
-          if (err) {
+              SELECT DISTINCT username
+              FROM (
+                  SELECT receiver AS username
+                  FROM friends
+                  WHERE sender = ? AND receiver IN (SELECT sender FROM friends WHERE receiver = ?)
+                  UNION
+                  SELECT sender AS username
+                  FROM friends
+                  WHERE receiver = ? AND sender IN (SELECT receiver FROM friends WHERE sender = ?)
+              ) AS mutualFriendsUsers;
+          `;      // execute sql query
+      db.query(sqlquery, [sanitizedUsername, sanitizedUsername, sanitizedUsername, sanitizedUsername], (err, result) => {
+            if (err) {
               res.redirect('./'); 
           }
           let newData = Object.assign({}, shopData, {availableUsers:result});
@@ -384,35 +505,6 @@ app.get('/chat-list', function(req, res) {
     }
 });
 
-app.get('/requests', function(req, res) {
-  if (!req.session.userId ) {
-    res.send('you need to login. <a href='+'./login'+'>login</a>');
-    } 
-    else{
-      let sanitizedUsername = req.sanitize(req.session.userId);
-      let sqlquery = `
-      SELECT DISTINCT username
-      FROM (
-          SELECT receiver AS username
-          FROM friends
-          WHERE sender = ?
-          UNION
-          SELECT sender AS username
-          FROM friends
-          WHERE receiver = ?
-      ) AS friendsUsers;
-  `;      // execute sql query
-      db.query(sqlquery, [sanitizedUsername, sanitizedUsername],(err, result) => {
-          if (err) {
-              res.redirect('./'); 
-          }
-          let newData = Object.assign({}, shopData, {availableUsers:result});
-          console.log(newData)
-          console.log(sqlquery)
-          res.render("requests.ejs", newData)
-      });
-    }
-});
 app.get('/chat-message/:keyword', function(req, res) {
   if (!req.session.userId ) {
     res.send('you need to login. <a href='+'../login'+'>login</a>');
