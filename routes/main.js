@@ -725,14 +725,22 @@ app.get('/gif',function(req,res){
     }
 });
 
-app.post('/gif-send', async(req, res) => {
+const axios = require('axios');
+
+app.post('/gif-send', async (req, res) => {
   try {
     const APIKEY = '1344jP0UiEy5Eom8CsVIWryP4JrIg8rp';
     const gif = req.sanitize(req.body.gif);
     const url = `https://api.giphy.com/v1/gifs/search?api_key=${APIKEY}&limit=1&q=${gif}`;
 
-    const response = await fetch(url);
-    const content = await response.json();
+    const response = await axios.get(url);
+    const content = response.data;
+
+    if (content.data.length === 0) {
+      // Handle case when no GIFs are found
+      res.status(404).json({ error: 'No GIFs found' });
+      return;
+    }
 
     const gifData = {
       url: content.data[0].images.downsized.url,
@@ -740,23 +748,30 @@ app.post('/gif-send', async(req, res) => {
     };
 
     // Insert into the database
-    let sqlquery = "INSERT INTO chat (sender,receiver,url,title) VALUES (?,?,?,?)";
-      // execute sql query
-      let newrecord = [req.session.userId, req.body.username,content.data[0].images.downsized.url,content.data[0].title];
-      db.query(sqlquery, newrecord, (err, result) => {
-        if (err) {
-          return console.error(err.message);
-        }
-        else
+    let sqlquery = "INSERT INTO chat (sender, receiver, url, title) VALUES (?, ?, ?, ?)";
+    // execute sql query
+    let newrecord = [
+      req.session.userId,
+      req.body.username,
+      content.data[0].images.downsized.url,
+      content.data[0].title,
+    ];
+    db.query(sqlquery, newrecord, (err, result) => {
+      if (err) {
+        return console.error(err.message);
+      } else {
         // output sent message
-        result = 'Hello '+ req.sanitize(req.session.userId)
-        + ' your GIF to '+ req.sanitize(req.body.username) +' has been sent '+ '<a href='+'./chat-list'+'>See message</a>';
+        result = 'Hello ' + req.sanitize(req.session.userId) +
+          ' your GIF to ' + req.sanitize(req.body.username) +
+          ' has been sent ' + '<a href=' + './chat-list' + '>See message</a>';
         res.send(result);
+      }
     });
-  }catch (err) {
+  } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 }
