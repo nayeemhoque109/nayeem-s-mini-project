@@ -126,7 +126,7 @@ module.exports = function(app, shopData) {
     
     app.get('/create-group', function (req, res) {
       // Render a form or page to input group details
-      res.render('create-group.ejs');
+      res.render('create-group.ejs',shopData);
     });
     
     app.post('/group-add', function (req, res) {
@@ -182,7 +182,7 @@ module.exports = function(app, shopData) {
         }
     });
 
-    app.post('/add-to-group', function (req, res) {
+    /* app.post('/add-to-group', function (req, res) {
       if (!req.session.userId) {
           return res.send('You need to login. <a href="./login">Login</a>');
       }
@@ -265,7 +265,7 @@ module.exports = function(app, shopData) {
               });
           }
       });
-  });
+  }); */
     
     
 
