@@ -23,19 +23,28 @@
             </div>
             <i class="fa fa-bars" onclick="showMenu()"></i>
         </nav>
-        <h1>Friends List</h1>  
+        <h1>Friends list</h1>  
   </section>
-  <h2>Select the username to add</h2>
 
     <section class="firstsec">
+    <h2>Group Chat</h2>
     <ul>
     
       <div class="row">
           <div class="firstsec-col">
-      <% availableUsers.forEach(function(user) { %>         
-              <h3><a href="friend-request/<%= user.username %>"><%= user.username %></a></h3>
-              <% }) %>    
+            <% chatData.forEach(function(message) { %>
+            <h3><%= message.sender %>: <%= message.message %>, <%= message.timestamp %></h3>
+              <% }) %>  
             </div>
+
+
+        <form action="/group-chat-send" method="post">
+        <input type="hidden" name="groupId" value="<%= groupId %>">
+        <label for="message">Message:</label>
+        <input type="text" name="message" id="message" required>
+        <input type="submit" value="Send">
+        </form>
+
         
     </ul>
       </div>

@@ -31,9 +31,13 @@
     
       <div class="row">
           <div class="firstsec-col">
-      <% availableUsers.forEach(function(user) { %>         
-              <h3><a href="chat-message/<%= user.username %>"><%= user.username %></a></h3>
-              <% }) %>    
+            <% availableUsers.forEach(function(user) { %>
+              <h3><a href="/chat-message/<%= user.username %>"><%= user.username %></a></h3>
+            <% }) %>
+          
+            <% availableGroups.forEach(function(group) { %>
+              <h3><a href="/group-chat/<%= group.group_id %>"><%= group.group_name %></a></h3>
+            <% }) %>   
             </div>
           <div class="firstsec-col">
             <h3><a href="chat">Send message</a></h3>
@@ -41,7 +45,8 @@
             <h3><a href="requests">Friend requests</a></h3>
             <h3><a href="search">Add friend</a></h3>
             <h3><a href="friends-list">Friends list</a></h3>
-            <h3><a href="Group">Create group</a></h3>
+            <h3><a href="create-group">Create group</a></h3>
+            <h3><a href="add-to-group">Add to group</a></h3>
           </div>
         
     </ul>

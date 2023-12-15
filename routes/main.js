@@ -124,64 +124,207 @@ module.exports = function(app, shopData) {
         }
     });
     
-    app.get('/group',function(req,res){
+    app.get('/create-group', function (req, res) {
+      // Render a form or page to input group details
+      res.render('create-group.ejs');
+    });
+    
+    app.post('/group-add', function (req, res) {
+      if (!req.session.userId) {
+        return res.send('You need to login. <a href="./login">Login</a>');
+      }
+    
+      const admin = req.sanitize(req.session.userId);
+      const newGroupName = req.sanitize(req.body.newGroup);
+    
+      // Check if the group already exists for the admin and the specified group name
+      const checkGroupQuery = `
+        SELECT group_id FROM groupss WHERE admin = ? AND group_name = ?;
+      `;
+    
+      db.query(checkGroupQuery, [admin, newGroupName], (checkGroupErr, checkGroupResult) => {
+        if (checkGroupErr) {
+          return console.error(checkGroupErr.message);
+        }
+    
+        if (checkGroupResult.length === 0) {
+          // If the group doesn't exist, create it
+          const createGroupQuery = `
+            INSERT INTO groupss (group_name, admin) VALUES (?, ?);
+          `;
+    
+          db.query(createGroupQuery, [newGroupName, admin], (createGroupErr, createGroupResult) => {
+            if (createGroupErr) {
+              return console.error(createGroupErr.message);
+            }
+    
+            const outputMessage = `Hello ${admin}, you have created the group ${newGroupName}. 
+              <a href='./chat-list'>See messages</a>`;
+    
+            res.send(outputMessage);
+          });
+        } else {
+          // The group already exists
+          const outputMessage = `Hello ${admin},  group ${newGroupName} already exists. 
+            <a href='./chat-list'>See messages</a>`;
+    
+          res.send(outputMessage);
+        }
+      });
+    });
+    
+    app.get('/add-to-group', function(req, res) {
       if (!req.session.userId ) {
         res.send('you need to login. <a href='+'./login'+'>login</a>');
         } 
         else{
           res.render("add-to-group.ejs", shopData);
         }
-    }); 
-    
-    app.post('/group-add', function(req, res) {
+    });
+
+    app.post('/add-to-group', function (req, res) {
       if (!req.session.userId) {
-        return res.send('You need to login. <a href="./login">Login</a>');
+          return res.send('You need to login. <a href="./login">Login</a>');
       }
-    
+  
       const admin = req.sanitize(req.session.userId);
       const userToAdd = req.sanitize(req.body.username);
-    
-      // Generate a unique group name, you might use a more sophisticated method in production
-      const groupName = `group_${Date.now()}`;
-    
-      // Create the group table
-      const createTableQuery = `
-        CREATE TABLE ${groupName} (
-          admin VARCHAR(20),
-          users VARCHAR(20),
-          message TEXT DEFAULT NULL,
-          url VARCHAR(255) DEFAULT NULL,
-          title VARCHAR(255) DEFAULT NULL,
-          timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          timestamp_formatted VARCHAR(19) GENERATED ALWAYS AS (DATE_FORMAT(timestamp, '%d-%m-%Y %H:%i')) STORED,
-          FOREIGN KEY (admin) REFERENCES users(username),
-          FOREIGN KEY (users) REFERENCES users(username)
-        )
+      const groupName = req.sanitize(req.body.groupName);
+
+      console.log(admin);
+      console.log(userToAdd);
+      console.log(groupName);
+  
+      // Check if the group already exists for the admin and the specified group name
+      const checkGroupQuery = `
+          SELECT group_id FROM groupss WHERE admin = ? AND group_name = ?;
       `;
-    
-      db.query(createTableQuery, (createErr, createResult) => {
-        if (createErr) {
-          return console.error(createErr.message);
-        }
-    
-        // Insert the user to the group
-        const insertQuery = `
-          INSERT INTO ${groupName} (admin, users)
-          VALUES (?, ?)
-        `;
-    
-        db.query(insertQuery, [admin, userToAdd], (err, result) => {
-          if (err) {
-            return console.error(err.message);
+  
+      db.query(checkGroupQuery, [admin, groupName], (checkGroupErr, checkGroupResult) => {
+          if (checkGroupErr) {
+              console.error('Error checking group:', checkGroupErr);
+              return res.status(500).send('Internal Server Error');
           }
-    
-          const outputMessage = `Hello ${admin}, you have added ${userToAdd} to the group. 
-            <a href='./chat-list'>See messages</a>`;
-          
-          res.send(outputMessage);
-        });
+  
+          console.log('Check Group Result:', checkGroupResult);
+  
+          if (checkGroupResult.length === 0) {
+              // If the group doesn't exist, create it and add the admin and user to group_members
+              const createGroupQuery = `
+                  INSERT INTO groupss (group_name, admin) VALUES (?, ?);
+              `;
+  
+              db.query(createGroupQuery, [groupName, admin], (createGroupErr, createGroupResult) => {
+                  if (createGroupErr) {
+                      console.error('Error creating group:', createGroupErr);
+                      return res.status(500).send('Internal Server Error');
+                  }
+  
+                  console.log('Create Group Result:', createGroupResult);
+  
+                  const groupId = createGroupResult.insertId;
+  
+                  // Add the admin and user to the group_members table
+                  const addMembersToGroupQuery = `
+                      INSERT INTO group_members (group_id, user_id) VALUES (?, ?), (?, ?);
+                  `;
+  
+                  db.query(addMembersToGroupQuery, [groupId, admin, groupId, userToAdd], (addMembersErr, addMembersResult) => {
+                      if (addMembersErr) {
+                          console.error('Error adding members to group_members:', addMembersErr);
+                          return res.status(500).send('Internal Server Error');
+                      }
+  
+                      console.log('Add Members Result:', addMembersResult);
+  
+                      const outputMessage = `Hello ${admin}, you have added ${userToAdd} to the group ${groupName}. 
+                          <a href='./chat-list'>See messages</a>`;
+  
+                      res.send(outputMessage);
+                  });
+              });
+          } else {
+              // The group already exists, add the user to the group_members table
+              const addUserToGroupQuery = `
+                  INSERT INTO group_members (group_id, user_id) VALUES (?, ?)
+                  ON DUPLICATE KEY UPDATE user_id = VALUES(user_id);
+              `;
+
+              db.query(addUserToGroupQuery, [groupId, userToAdd], (addUserErr, addUserResult) => {
+                  if (addUserErr) {
+                      console.error('Error adding user to group_members:', addUserErr);
+                      return res.status(500).send('Internal Server Error');
+                  }
+
+                  console.log('Add User to Group Result:', addUserResult);
+
+                  // Continue processing or respond to the client
+                  const outputMessage = `Hello ${admin}, you have added ${userToAdd} to the group ${groupName}. 
+                      <a href='./chat-list'>See messages</a>`;
+                  res.send(outputMessage);
+              });
+          }
       });
+  });
+    
+    
+
+    
+    
+
+
+    // Route to render the group chat page
+app.get('/group-chat/:groupId', function(req, res) {
+  const groupId = req.params.groupId;
+
+  // Check if the user is a member of the group
+  const checkMembershipQuery = `
+    SELECT * FROM group_members WHERE group_id = ? AND user_id = ?;
+  `;
+
+  db.query(checkMembershipQuery, [groupId, req.session.userId], (membershipErr, membershipResult) => {
+    if (membershipErr || membershipResult.length === 0) {
+      // Redirect or display an error message if the user is not a member of the group
+      return res.redirect('/chat-list');
+    }
+
+    // Retrieve group chat messages
+    const getGroupChatQuery = `
+      SELECT * FROM chat WHERE group_id = ? ORDER BY timestamp;
+    `;
+
+    db.query(getGroupChatQuery, [groupId], (err, messages) => {
+      if (err) {
+        return console.error(err.message);
+      }
+
+      const newData = Object.assign({}, shopData, { chatData: messages, groupId });
+      res.render('group-chat.ejs', newData);
     });
+  });
+});
+
+// Route to handle sending group chat messages
+app.post('/group-chat-send', function(req, res) {
+  const groupId = req.body.groupId; // Assuming you have a way to identify the group
+
+  const sendGroupMessageQuery = `
+    INSERT INTO chat (sender, group_id, message) VALUES (?, ?, ?);
+  `;
+
+  const newRecord = [req.session.userId, groupId, req.body.message];
+
+  db.query(sendGroupMessageQuery, newRecord, (err, result) => {
+    if (err) {
+      return console.error(err.message);
+    }
+
+    // Redirect back to the group chat page after sending the message
+    res.redirect(`/group-chat/${groupId}`);
+  });
+});
+
+    
     
 
     app.get('/register', function (req,res) {
@@ -220,6 +363,7 @@ module.exports = function(app, shopData) {
           });
         }
     }); 
+
 
     // Add a /listusers route and page to display the user details
     app.get('/listusers', function(req, res) {
@@ -330,17 +474,43 @@ app.post('/deleteduser', redirectLogin,function(req, res) {
             if (err) {
               return res.redirect('./')
             }
-            let sqlquery = "DELETE FROM users WHERE username = ?";
-            // execute sql query
-            let usernameToRemove = req.sanitize(req.body.username); 
-            db.query(sqlquery, [usernameToRemove], (err, result) => {
+            // Delete associated chat records
+            let deleteChatQuery = "DELETE FROM chat WHERE sender = ? OR receiver = ?";
+            db.query(deleteChatQuery, [username, username], (err, chatResult) => {
               if (err) {
                 return console.error(err.message);
-              } else {
-                res.send('User removed from the database, username: ' + usernameToRemove +'./'+'>Home</a>');
               }
-            });
+
+
+              let usernameToRemove = req.sanitize(req.body.username);
+
+              // Disable foreign key checks
+              let disableForeignKeyQuery = "SET foreign_key_checks = 0";
+              db.query(disableForeignKeyQuery, (disableForeignKeyErr) => {
+                if (disableForeignKeyErr) {
+                  return console.error(disableForeignKeyErr.message);
+                }
+            
+                // Execute DELETE query
+                let deleteUserQuery = "DELETE FROM users WHERE username = ?";
+                db.query(deleteUserQuery, [usernameToRemove], (deleteUserErr, result) => {
+                  // Re-enable foreign key checks
+                  let enableForeignKeyQuery = "SET foreign_key_checks = 1";
+                  db.query(enableForeignKeyQuery, (enableForeignKeyErr) => {
+                    if (enableForeignKeyErr) {
+                      return console.error(enableForeignKeyErr.message);
+                    }
+            
+                    if (deleteUserErr) {
+                      return console.error(deleteUserErr.message);
+                    } else {
+                      res.send('User removed from the database, username: ' + usernameToRemove + ' ./ ' + '>Home</a>');
+                    }
+                  });
+                });
+              });
           });
+        });
         }
         else {
           // Passwords do not match, login failed
@@ -476,34 +646,55 @@ app.post('/chat-send', function(req, res) {
 });
 
 app.get('/chat-list', function(req, res) {
-  if (!req.session.userId ) {
-    res.send('you need to login. <a href='+'./login'+'>login</a>');
-    } 
-    else{
-      let sanitizedUsername = req.sanitize(req.session.userId);
-      let sqlquery = `
-              SELECT DISTINCT username
-              FROM (
-                  SELECT receiver AS username
-                  FROM friends
-                  WHERE sender = ? AND receiver IN (SELECT sender FROM friends WHERE receiver = ?)
-                  UNION
-                  SELECT sender AS username
-                  FROM friends
-                  WHERE receiver = ? AND sender IN (SELECT receiver FROM friends WHERE sender = ?)
-              ) AS mutualFriendsUsers;
-          `;      // execute sql query
-      db.query(sqlquery, [sanitizedUsername, sanitizedUsername, sanitizedUsername, sanitizedUsername], (err, result) => {
-            if (err) {
-              res.redirect('./'); 
-          }
-          let newData = Object.assign({}, shopData, {availableUsers:result});
-          console.log(newData)
-          console.log(sqlquery)
-          res.render("chat-list.ejs", newData)
-      });
+  if (!req.session.userId) {
+    return res.send('You need to login. <a href="./login">Login</a>');
+  }
+
+  const sanitizedUsername = req.sanitize(req.session.userId);
+
+  // Retrieve individual chat partners
+  const individualChatQuery = `
+    SELECT DISTINCT username
+    FROM (
+      SELECT receiver AS username
+      FROM friends
+      WHERE sender = ? AND receiver IN (SELECT sender FROM friends WHERE receiver = ?)
+      UNION
+      SELECT sender AS username
+      FROM friends
+      WHERE receiver = ? AND sender IN (SELECT receiver FROM friends WHERE sender = ?)
+    ) AS mutualFriendsUsers;
+  `;
+
+  // Retrieve group chat partners
+  const groupChatQuery = `
+    SELECT group_id, group_name
+    FROM groupss
+    WHERE group_id IN (SELECT group_id FROM group_members WHERE user_id = ?);
+  `;
+
+  db.query(individualChatQuery, [sanitizedUsername, sanitizedUsername, sanitizedUsername, sanitizedUsername], (err, individualResult) => {
+    if (err) {
+      console.error('Error in individualChatQuery:', err);
+      return res.redirect('./');
     }
+
+    db.query(groupChatQuery, [sanitizedUsername], (err, groupResult) => {
+      if (err) {
+        console.error('Error in groupChatQuery:', err);
+        return res.redirect('./');
+      }
+
+      const newData = Object.assign({}, shopData, {
+        availableUsers: individualResult || [],  // Ensure it's an array even if undefined
+        availableGroups: groupResult || [],        // Ensure it's an array even if undefined
+      })
+      console.log('Rendering chat-list.ejs with newData:', newData);
+      res.render('chat-list.ejs', newData);
+    });
+  });
 });
+
 
 app.get('/chat-message/:keyword', function(req, res) {
   if (!req.session.userId ) {

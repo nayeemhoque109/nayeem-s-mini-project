@@ -23,27 +23,15 @@
             </div>
             <i class="fa fa-bars" onclick="showMenu()"></i>
         </nav>
-        <h1>Friends List</h1>  
+        <h1>Make group</h1>  
   </section>
-  <h2>Select the username to add</h2>
-
-    <section class="firstsec">
-    <ul>
-    
-      <div class="row">
-          <div class="firstsec-col">
-      <% availableUsers.forEach(function(user) { %>         
-              <h3><a href="friend-request/<%= user.username %>"><%= user.username %></a></h3>
-              <% }) %>    
-            </div>
-        
-    </ul>
-      </div>
-  </section>
-
-
-    
-  </section>
+    <h2>Make a group</h2>
+    <form action="/create-group" method="post">
+        <p>Group name: <input id="new-group" type="text" name="newGroup" value="new-group" /></p>
+        <input type="submit" value="Create Group">
+    </form>
+  
+  
   <script>
     var menu = document.getElementById("menu");
     

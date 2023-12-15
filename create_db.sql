@@ -27,6 +27,7 @@ CREATE TABLE friends (
   sender VARCHAR(20),
   receiver VARCHAR(20),
   message TEXT DEFAULT NULL,
+  group_id INT DEFAULT NULL,
   url VARCHAR(255) DEFAULT NULL,
   title VARCHAR(255) DEFAULT NULL,
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -34,11 +35,44 @@ CREATE TABLE friends (
   FOREIGN KEY (sender) REFERENCES users(username),
   FOREIGN KEY (receiver) REFERENCES users(username)
 );
+CREATE TABLE groupss (
+  group_id INT PRIMARY KEY AUTO_INCREMENT,
+  group_name VARCHAR(255) NOT NULL,
+  admin VARCHAR(20) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (admin) REFERENCES users(username)
+);
+CREATE TABLE group_members (
+  group_id INT,
+  user_id VARCHAR(20),
+  PRIMARY KEY (group_id),
+  UNIQUE KEY (group_id, user_id),
+  FOREIGN KEY (group_id) REFERENCES groupss(group_id),
+  FOREIGN KEY (user_id) REFERENCES users(username)
+);
+
+
+ALTER TABLE chat ADD COLUMN group_id INT;
+ALTER TABLE group_members
+ADD UNIQUE INDEX unique_group_user (group_id, user_id);
+ALTER TABLE chat
+ADD FOREIGN KEY (sender) REFERENCES users(username) ON DELETE CASCADE,
+ADD FOREIGN KEY (receiver) REFERENCES users(username) ON DELETE CASCADE;
+ALTER TABLE friends
+ADD CONSTRAINT fk_sender
+FOREIGN KEY (sender) REFERENCES users(username)
+ON DELETE CASCADE;
+
+
+
 
 USE myBookshop;
 SELECT * FROM users;
 SELECT * FROM chat;
 SELECT * FROM friends;
+SELECT * FROM groupss;
+SELECT * FROM group_members;
+
 
 SELECT * FROM books;
 
